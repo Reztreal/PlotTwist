@@ -9,7 +9,6 @@ public class CreateMesh : MonoBehaviour
     private Vector3[] vertices;
     private int[] triangles;
 
-
     // U axis
     [Min(16)]
     public int UResolution = 16;
@@ -60,7 +59,7 @@ public class CreateMesh : MonoBehaviour
     }
 
     /// <summary>
-    /// Create the vertex points of the surface and treat the vertices array like a 2d array.
+    /// Creates the vertex points of the surface and treats the vertices array like a 2d array.
     /// </summary>
     /// <param name="u_step"></param>
     /// <param name="v_step"></param>
@@ -99,7 +98,8 @@ public class CreateMesh : MonoBehaviour
 
 
     /// <summary>
-    /// This function create the triangles from the vertex points of the surface.
+    /// 
+    /// This function creates the triangles from the vertex points on the surface.
     /// 
     ///    1          3
     ///     *--------*
@@ -110,7 +110,7 @@ public class CreateMesh : MonoBehaviour
     ///     *--------*
     ///    0         2
     ///    
-    /// Unity uses clock wise winding so using the above quad formed from the vertices of the surface
+    /// Unity uses clockwise winding so using the above quad formed from the vertices of the surface
     /// (0, 1, 2),
     /// (2, 1, 3)
     /// are the triangles that belong to this quad. If the surface is rendered double sided back triangles
@@ -176,5 +176,31 @@ public class CreateMesh : MonoBehaviour
         float z = 0.2f * Mathf.Sin(v);
 
         return new Vector3(x, y, z);
-    }    
+    }
+
+    private void OnDrawGizmos()
+    {
+        if (mesh == null) return;
+
+        Gizmos.color = Color.red;
+
+        for (int i = 0; i < vertices.Length; i++)
+        {
+            // Draw a small sphere at each vertex
+            Gizmos.DrawSphere(transform.TransformPoint(vertices[i]), 0.01f);
+
+            if (doubleSided && i >= vertices.Length / 2) continue; // Skip back vertices if double-sided
+
+            // Draw lines between vertices
+            if ((i + 1) % UResolution != 0) // Check if not at the end of a U row
+            {
+                Gizmos.DrawLine(transform.TransformPoint(vertices[i]), transform.TransformPoint(vertices[i + 1]));
+            }
+            if (i + UResolution < vertices.Length) // Check if not at the last V row
+            {
+                Gizmos.DrawLine(transform.TransformPoint(vertices[i]), transform.TransformPoint(vertices[i + UResolution]));
+            }
+        }
+    }
+
 }
