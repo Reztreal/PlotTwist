@@ -1,10 +1,21 @@
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
 public class CreateMesh : MonoBehaviour
 {
+    public TMPro.TMP_Dropdown surfaceDropdown;
+
+    public GameObject vertexPrefab;
+    public List<GameObject> vertexRepresentations;
+
+    public Material lineMaterial; // Material for the line renderers
+    private List<LineRenderer> lineRenderers = new List<LineRenderer>(); // Store line renderers
+
+
     private Mesh mesh;
     private Vector3[] vertices;
     private int[] triangles;
@@ -25,17 +36,37 @@ public class CreateMesh : MonoBehaviour
 
     public bool doubleSided = true;
 
+    private enum SurfaceType
+    { Sphere, Torus, MobiusStrip}
+    private SurfaceType selectedSurfaceType = SurfaceType.Sphere;
+
     private void Start()
     {
+        surfaceDropdown.onValueChanged.AddListener(delegate { DropdownValueChanged(surfaceDropdown); });
+        
         mesh = new Mesh();
         GetComponent<MeshFilter>().mesh = mesh;
 
         CreateShape();
+        CreateVertexRepresentations();
+
+
     }
 
     private void Update()
     {
         UpdateMesh();
+    }
+
+    private void DropdownValueChanged(TMP_Dropdown dropdown)
+    {
+        selectedSurfaceType = (SurfaceType)dropdown.value;
+        ClearVertexRepresentations();
+
+        Debug.Log(selectedSurfaceType.ToString());
+        CreateShape();
+        CreateVertexRepresentations();
+
     }
 
     private void UpdateMesh()
@@ -54,7 +85,20 @@ public class CreateMesh : MonoBehaviour
         float vStep = (v.x - v.y) / (VResolution - 1);
 
         int vertexCount = doubleSided ? UResolution * VResolution * 2 : UResolution * VResolution;
-        CreateVertices(uStep, vStep, vertexCount);
+
+        switch (selectedSurfaceType)
+        {
+            case SurfaceType.Sphere:
+                u = new Vector2(0, 6.283f);
+                v = new Vector2(0, 6.283f);
+                CreateVertices(uStep, vStep, vertexCount, ParametricFunctions.ParametricSphere);
+                break;
+            case SurfaceType.Torus:
+                u = new Vector2(0, 6.283f);
+                v = new Vector2(0, 6.283f);
+                CreateVertices(uStep, vStep, vertexCount, ParametricFunctions.Torus);
+                break;
+        }
         CreateTriangles();
     }
 
@@ -64,7 +108,7 @@ public class CreateMesh : MonoBehaviour
     /// <param name="u_step"></param>
     /// <param name="v_step"></param>
     /// <param name="vCount"></param>
-    private void CreateVertices(float u_step, float v_step, int vCount)
+    private void CreateVertices(float u_step, float v_step, int vCount, System.Func<float, float, Vector3> surfaceFunction)
     {
         vertices = new Vector3[vCount];
 
@@ -72,7 +116,7 @@ public class CreateMesh : MonoBehaviour
         {
             for (int j = 0; j < UResolution; j++)
             {
-                vertices[i * UResolution + j] = Torus(u.x + u_step * j, v.x + v_step * i);
+                vertices[i * UResolution + j] = surfaceFunction(u.x + u_step * j, v.x + v_step * i);
             }
         }
 
@@ -160,47 +204,23 @@ public class CreateMesh : MonoBehaviour
         }
     }
 
-    private Vector3 ParametricSphere(float u, float v)
+    public void CreateVertexRepresentations()
     {
-        float x = Mathf.Cos(u) * Mathf.Sin(v);
-        float y = Mathf.Sin(u) * Mathf.Sin(v);
-        float z = Mathf.Cos(v);
+        if (vertexPrefab == null) return;
 
-        return new Vector3(x, y, z);
-    }
-
-    private Vector3 Torus(float u, float v)
-    {
-        float x = (0.6f + 0.2f * Mathf.Cos(v)) * Mathf.Cos(u);
-        float y = (0.6f + 0.2f * Mathf.Cos(v)) * Mathf.Sin(u);
-        float z = 0.2f * Mathf.Sin(v);
-
-        return new Vector3(x, y, z);
-    }
-
-    private void OnDrawGizmos()
-    {
-        if (mesh == null) return;
-
-        Gizmos.color = Color.red;
-
-        for (int i = 0; i < vertices.Length; i++)
+        foreach (Vector3 vertex in mesh.vertices)
         {
-            // Draw a small sphere at each vertex
-            Gizmos.DrawSphere(transform.TransformPoint(vertices[i]), 0.01f);
-
-            if (doubleSided && i >= vertices.Length / 2) continue; // Skip back vertices if double-sided
-
-            // Draw lines between vertices
-            if ((i + 1) % UResolution != 0) // Check if not at the end of a U row
-            {
-                Gizmos.DrawLine(transform.TransformPoint(vertices[i]), transform.TransformPoint(vertices[i + 1]));
-            }
-            if (i + UResolution < vertices.Length) // Check if not at the last V row
-            {
-                Gizmos.DrawLine(transform.TransformPoint(vertices[i]), transform.TransformPoint(vertices[i + UResolution]));
-            }
+            GameObject vertexRep = Instantiate(vertexPrefab, transform.TransformPoint(vertex), Quaternion.identity, transform);
+            vertexRepresentations.Add(vertexRep);
         }
     }
 
+    public void ClearVertexRepresentations()
+    {
+        foreach (GameObject vertexRep in vertexRepresentations)
+        {
+            Destroy(vertexRep);
+        }
+        vertexRepresentations.Clear();
+    }
 }
