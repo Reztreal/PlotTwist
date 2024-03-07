@@ -1,9 +1,9 @@
 # PlotTwist
 
 ## Demo
-![sphere](https://github.com/Reztreal/PlotTwist/blob/main/snips/sphere.PNG?raw=true "Sphere")
+<img src="https://github.com/Reztreal/PlotTwist/blob/main/snips/sphere.PNG?raw=true" alt="Alt text for sphere image" title="Sphere" width="200" height="200"/>
 
-![torus](https://github.com/Reztreal/PlotTwist/blob/main/snips/torus.PNG?raw=true "Torus")
+<img src="https://github.com/Reztreal/PlotTwist/blob/main/snips/torus.PNG?raw=true" alt="Alt text for torus image" title="Torus" width="200" height="200"/>
 
 
 ## Introduction
